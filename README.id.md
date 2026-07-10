@@ -61,10 +61,12 @@ GUILD_ID=your_test_server_id
 DATABASE_URL="file:./dev.db"
 LMSTUDIO_URL=http://127.0.0.1:1234/v1
 AI_PROVIDER=lmstudio
-MODEL=google/gemma-4-e2b
+MODEL=google/gemma-4-e4b
 LOG_LEVEL=info
 PORT=3000
 ```
+
+- `/model name:<model-id>` — Administrator-only: set the LM Studio model used for this server. Example: `/model name:google/gemma-4-e4b`
 
 `GUILD_ID` berguna saat pengembangan karena command terdaftar lebih cepat di satu server, tapi bersifat opsional untuk deployment global.
 

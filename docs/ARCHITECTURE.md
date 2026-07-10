@@ -46,6 +46,8 @@ For current-information requests, `ToolManager` calls the configured SearXNG ins
 
 The `dist` directory is generated output only.
 
+Model selection priority: the bot resolves which LM Studio model to use using the following order: 1) a model pinned by a guild administrator via the `/model` command; 2) a model discovered from the LM Studio `/models` endpoint that is reported ready/loaded; 3) the fallback `MODEL` value from the operator's `.env` configuration. This gives administrators deterministic control while allowing automatic fallback to models loaded on the host.
+
 ## Deployment model
 
 Development uses SQLite. For production, deploy the bot with PostgreSQL, a production-specific Prisma datasource and migration workflow, process supervision, encrypted secrets, and persistent logs. The local LM Studio server must be reachable from the bot host; never expose it publicly without authentication and network controls.

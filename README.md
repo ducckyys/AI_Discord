@@ -63,7 +63,7 @@ GUILD_ID=your_test_server_id
 DATABASE_URL="file:./dev.db"
 LMSTUDIO_URL=http://127.0.0.1:1234/v1
 AI_PROVIDER=lmstudio
-MODEL=google/gemma-4-e2b
+MODEL=google/gemma-4-e4b
 LOG_LEVEL=info
 PORT=3000
 ```
@@ -154,6 +154,7 @@ Here are concise examples showing how to use the slash commands from Discord's c
 - `/memory` — Show what the bot keeps in conversation memory for the current channel. Example: `/memory`
 
 - `/model name:<model-id>` — Administrator-only: set the LM Studio model used for this server. Example: `/model name:google/gemma-4-e2b`
+ - `/model name:<model-id>` — Administrator-only: set the LM Studio model used for this server. Example: `/model name:google/gemma-4-e4b`
 
 - `/status` — Show bot status, configured AI channel, model, memory window, cooldowns, and rate limits. Example: `/status`
 
@@ -190,6 +191,16 @@ node ./dist/deployCommands.js
 ```
 
 If your bot uses a `GUILD_ID` in `.env` the commands register faster for that server; otherwise they are registered globally and may take longer to appear.
+
+## Model selection priority
+
+When resolving which LM Studio model to use for a request, the bot follows this priority:
+
+1. **Pinned model via `/model`** — if a guild administrator set a model with `/model`, that value is used.
+2. **Discovered model** — if no pinned model is present, the bot attempts to detect a loaded model from the LM Studio server and use one that is reported as ready.
+3. **Fallback `MODEL` from `.env`** — if discovery fails, the bot falls back to the `MODEL` value in your `.env`.
+
+This ordering gives administrators deterministic control while allowing automatic fallback to available models on the host.
 
 Useful command ideas if `/ask` feels unnecessary:
 

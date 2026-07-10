@@ -35,6 +35,8 @@ With the standard OpenAI-compatible JSON shape:
 }
 ```
 
+Note: replace the example `model` with the model identifier you loaded in LM Studio (for example `google/gemma-4-e4b`).
+
 The bot validates malformed responses and shows a safe Discord-facing error instead of an internal stack trace.
 
 ## SearXNG integration
