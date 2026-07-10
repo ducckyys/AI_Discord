@@ -14,7 +14,6 @@ Do not disclose vulnerabilities through public issues, Discord messages, or pull
 - Keep `.env` outside source control.
 - Restrict access to the host that runs the bot and LM Studio.
 - Do not publicly expose the LM Studio server unless it is protected by appropriate authentication and network controls.
-- Do not publicly expose ComfyUI unless it is protected by appropriate authentication and network controls.
 - Use a trusted, access-controlled SearXNG instance; web-search queries leave the bot host when an external instance is configured.
 - Review Discord permissions before inviting the bot to a server.
 - Keep Node.js, dependencies, and the operating system patched.

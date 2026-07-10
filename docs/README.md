@@ -18,10 +18,10 @@ This documentation helps you run, configure, and understand the Duccky AI bot.
 1. Read the main README at the repository root.
 2. Configure your environment with `.env.example`.
 3. Start LM Studio before running the bot.
-4. Optional: start SearXNG and/or ComfyUI if you want search or image generation.
+4. Optional: start SearXNG if you want search.
 
 ## Notes
 
 - The bot works as a Discord assistant powered by your local LM Studio instance.
-- SearXNG and ComfyUI are optional extras, not required for basic chat functionality.
-- If you only need chat, you can leave SearXNG and ComfyUI settings empty or disabled.
+- SearXNG is an optional extra, not required for basic chat functionality.
+- If you only need chat, you can leave SearXNG settings empty or disabled.

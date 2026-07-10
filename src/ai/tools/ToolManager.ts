@@ -1,5 +1,4 @@
 import type { InternetService, SearchResult } from "../internet/index.js";
-import { ImageService, isImageGenerationRequest } from "../image/index.js";
 import type { AIProvider } from "../providers/provider.js";
 import { Intent } from "../router/intent.js";
 import { buildContext } from "../services/context.js";
@@ -10,17 +9,13 @@ const searchPattern = /\b(?:search|cari|carikan|googling|terbaru|terkini|hari in
 export class ToolManager implements Tool {
   public readonly intent = Intent.INTERNET_SEARCH;
 
-  public constructor(private readonly provider: AIProvider, private readonly internet: InternetService, private readonly images = new ImageService()) {}
+  public constructor(private readonly provider: AIProvider, private readonly internet: InternetService) {}
 
   public async execute(input: ToolInput): Promise<ToolResult> {
-    if (isImageGenerationRequest(input.question, Boolean(input.images?.length))) {
-      const files = await this.images.generate(input.question);
-      return { content: "Gambar selesai dibuat.", files };
-    }
-
     const results = this.needsSearch(input.question)
       ? await this.internet.search(input.question, `${input.guildId}:${input.userId}`)
       : [];
+
     const question = results.length ? this.questionWithSources(input.question, results) : input.question;
     const content = await this.provider.chat(buildContext(input.history, question, input.images), { model: input.model });
     return { content: results.length ? `${content}\n\n${this.formatSources(results)}` : content };

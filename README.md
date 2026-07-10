@@ -4,7 +4,6 @@ Duccky AI is a self-hosted Discord assistant that runs on local AI services.
 
 - Chat: **LM Studio**
 - Optional live search: **SearXNG**
-- Optional image generation: **ComfyUI**
 
 This repository is for people who want a local Discord AI bot without cloud API keys.
 
@@ -13,7 +12,6 @@ This repository is for people who want a local Discord AI bot without cloud API 
 - TypeScript Discord bot implementation
 - LM Studio chat integration
 - Optional SearXNG search integration
-- Optional ComfyUI image integration
 - Prisma schema for local development
 - Tests, linting, and documentation
 
@@ -23,7 +21,6 @@ This repository is for people who want a local Discord AI bot without cloud API 
 - A Discord application and bot token
 - LM Studio running locally with a chat-capable model
 - Optional: SearXNG for search
-- Optional: ComfyUI for images
 
 ## Quick start
 
@@ -65,10 +62,6 @@ DATABASE_URL="file:./dev.db"
 LMSTUDIO_URL=http://127.0.0.1:1234/v1
 AI_PROVIDER=lmstudio
 MODEL=google/gemma-4-e2b
-IMAGE_PROVIDER=comfyui
-COMFYUI_URL=http://127.0.0.1:8188
-IMAGE_MODEL=flux1-schnell-Q3_K_S.gguf
-COMFYUI_WORKFLOW_PATH=
 LOG_LEVEL=info
 PORT=3000
 ```
@@ -127,17 +120,6 @@ This bot sends requests to `/search?format=json`. Your SearXNG instance must sup
 
 For example, ask `cari berita AI terbaru` or `latest Node.js release`. The bot will include the search results in the prompt sent to LM Studio.
 
-### 7. Enable image generation with ComfyUI (optional)
-
-Start ComfyUI and set `COMFYUI_URL` in `.env` to the ComfyUI API URL. The default is `http://127.0.0.1:8188`.
-
-The bot sends a workflow to ComfyUI and downloads the generated image from `/view`.
-
-- If `COMFYUI_WORKFLOW_PATH` is empty, the bot uses the built-in default workflow.
-- If `IMAGE_MODEL` ends with `.gguf`, the bot uses a GGUF-friendly built-in workflow.
-- If your ComfyUI graph is custom, export the workflow JSON from ComfyUI and set `COMFYUI_WORKFLOW_PATH`.
-
-The workflow must contain `{{PROMPT}}`. It may also include `{{MODEL}}` if your graph accepts a model placeholder.
 
 ## Commands
 
