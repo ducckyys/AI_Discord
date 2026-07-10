@@ -7,6 +7,19 @@ const responseSchema = z.object({ choices: z.array(z.object({ message: z.object(
 
 let _modelCache: { model: string; expiresAt: number } | null = null;
 
+type LMModel = { id?: string; name?: string; status?: string; ready?: boolean; loaded?: boolean };
+
+function toModelsArray(body: unknown): LMModel[] {
+  if (Array.isArray(body)) {
+    return body.filter((b): b is LMModel => typeof b === "object" && b !== null).map((b) => b as LMModel);
+  }
+  if (typeof body === "object" && body !== null) {
+    const maybe = (body as { models?: unknown }).models;
+    if (Array.isArray(maybe)) return maybe.filter((b): b is LMModel => typeof b === "object" && b !== null).map((b) => b as LMModel);
+  }
+  return [];
+}
+
 async function discoverLoadedModel(): Promise<string | null> {
   const now = Date.now();
   if (_modelCache && _modelCache.expiresAt > now) return _modelCache.model;
@@ -14,11 +27,9 @@ async function discoverLoadedModel(): Promise<string | null> {
     const res = await fetch(`${aiConfig.baseUrl}/models`);
     if (!res.ok) return null;
     const body: unknown = await res.json();
-    // body may be an array or an object { models: [...] }
-    const models = Array.isArray(body) ? body : (Array.isArray((body as any).models) ? (body as any).models : []);
+    const models = toModelsArray(body);
     if (!models.length) return null;
-    // prefer a model that indicates it's ready/loaded, otherwise take first
-    const ready = models.find((m: any) => m.status === "ready" || m.ready === true || m.loaded === true);
+    const ready = models.find((m) => m.status === "ready" || m.ready === true || m.loaded === true);
     const chosen = (ready?.id ?? ready?.name) ?? (models[0].id ?? models[0].name ?? null);
     if (chosen) _modelCache = { model: chosen, expiresAt: now + 60_000 };
     return chosen ?? null;
