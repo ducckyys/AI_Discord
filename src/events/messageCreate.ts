@@ -1,7 +1,7 @@
 import { Events, type Client } from "discord.js";
 import { z } from "zod";
 import { aiService } from "../services/aiService.js";
-import { settingsService, userService } from "../services/index.js";
+import { guildService, settingsService, userService } from "../services/index.js";
 import { isRateLimited } from "../middleware/rateLimiter.js";
 import { remainingCooldown } from "../middleware/cooldown.js";
 import { DEFAULT_COOLDOWN_MS, DEFAULT_RATE_LIMIT_MAX, DEFAULT_RATE_LIMIT_WINDOW_MS, MAX_PROMPT_LENGTH } from "../utils/constants.js";
@@ -10,6 +10,7 @@ import { splitMessage } from "../utils/formatter.js";
 const promptSchema = z.string().trim().min(1).max(MAX_PROMPT_LENGTH);
 export const registerMessages = (client: Client) => client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot || !message.guild || !client.user) return;
+  await guildService.ensure(message.guild.id, message.guild.name);
   const settings = await settingsService.get(message.guild.id); const mentioned = message.mentions.has(client.user); const dedicated = settings.aiChannelId === message.channel.id;
   if (!mentioned && !dedicated) return;
   const prompt = message.content.replace(new RegExp(`^<@!?${client.user.id}>\\s*`), ""); const parsed = promptSchema.safeParse(prompt);
