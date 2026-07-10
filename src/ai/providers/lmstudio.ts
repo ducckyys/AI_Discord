@@ -30,7 +30,9 @@ async function discoverLoadedModel(): Promise<string | null> {
     const models = toModelsArray(body);
     if (!models.length) return null;
     const ready = models.find((m) => m.status === "ready" || m.ready === true || m.loaded === true);
-    const chosen = (ready?.id ?? ready?.name) ?? (models[0].id ?? models[0].name ?? null);
+    const first = models[0];
+    if (!first) return null;
+    const chosen = (ready?.id ?? ready?.name) ?? (first.id ?? first.name ?? null);
     if (chosen) _modelCache = { model: chosen, expiresAt: now + 60_000 };
     return chosen ?? null;
   } catch {
