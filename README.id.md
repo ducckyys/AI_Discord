@@ -52,7 +52,7 @@ macOS/Linux:
 cp .env.example .env
 ```
 
-Isi setidaknya nilai wajib berikut:
+Salin nilai dari `.env.example`, lalu ganti placeholder-nya. Kredensial Discord yang wajib diisi adalah:
 
 ```env
 DISCORD_TOKEN=your_bot_token
@@ -161,6 +161,19 @@ Anda juga dapat memakai `/ask prompt:<teks>` serta menambahkan lampiran gambar b
 
 Prioritas pemilihan model adalah: model yang diatur melalui `/model`, lalu model yang ditemukan dari LM Studio, kemudian `MODEL` dalam `.env`.
 
+## Contoh slash command
+
+- `/ask prompt:Jelaskan TypeScript generics secara sederhana` — bertanya langsung ke bot. Tambahkan gambar pada kolom `image` bila ingin dianalisis.
+- `/search query:rilis Node.js terbaru` — mencari melalui instance SearXNG yang sudah dikonfigurasi.
+- `/reset` — menghapus konteks percakapan Anda di channel saat ini.
+- `/memory` — melihat kegunaan memori percakapan.
+- `/status` — memeriksa model aktif, channel AI, uptime, dan batasan.
+- `/config channel channel:#ai` — administrator: menjadikan `#ai` sebagai channel khusus tanpa perlu mention bot.
+- `/config channel` — administrator: menonaktifkan channel khusus dan kembali ke chat dengan mention.
+- `/model name:qwen3` — administrator: memilih identifier model yang tersedia di LM Studio.
+- `/ping`, `/help`, `/about`, dan `/invite` — command cepat untuk koneksi, bantuan, informasi bot, dan tautan instalasi.
+- `/reload` dan `/shutdown` — command pemeliharaan administrator. `/reload` menjelaskan proses deploy ulang command, sedangkan `/shutdown` menghentikan bot dengan aman.
+
 ## Pengembangan
 
 ```bash
@@ -169,7 +182,7 @@ corepack pnpm format:check
 corepack pnpm test
 ```
 
-Lihat [indeks dokumentasi](docs/README.md) untuk arsitektur, API, kontribusi, privasi, keamanan, dan ketentuan layanan.
+Lihat [indeks dokumentasi](docs/README.id.md) untuk arsitektur, API, kontribusi, privasi, keamanan, dan ketentuan layanan dalam Bahasa Indonesia.
 
 ## Lisensi
 

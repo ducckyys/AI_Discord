@@ -1,5 +1,7 @@
 # Duccky AI Documentation
 
+[Bahasa Indonesia](README.id.md)
+
 This documentation helps you run, configure, and understand the Duccky AI bot.
 
 | Document                                | Purpose                                               |

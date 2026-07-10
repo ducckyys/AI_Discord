@@ -52,7 +52,7 @@ macOS/Linux:
 cp .env.example .env
 ```
 
-Set at least the required values:
+Copy the values from `.env.example` and replace the placeholders. The required Discord credentials are:
 
 ```env
 DISCORD_TOKEN=your_bot_token
@@ -160,6 +160,19 @@ You can also use `/ask prompt:<text>` and optionally attach an image for analysi
 | `/shutdown` | Gracefully stop the bot process. | Administrator |
 
 Model selection uses this priority: the model set with `/model`, then a model discovered from LM Studio, then `MODEL` in `.env`.
+
+## Slash command examples
+
+- `/ask prompt:Explain TypeScript generics simply` — ask the bot directly. You may add an image in the `image` field for analysis.
+- `/search query:latest Node.js release` — search through the configured SearXNG instance.
+- `/reset` — remove your current-channel conversation context.
+- `/memory` — see what conversation memory is used for.
+- `/status` — check the active model, AI channel, uptime, and limits.
+- `/config channel channel:#ai` — administrator: make `#ai` the dedicated channel where no mention is needed.
+- `/config channel` — administrator: disable the dedicated channel and return to mention-only chat.
+- `/model name:qwen3` — administrator: select the model identifier exposed by LM Studio.
+- `/ping`, `/help`, `/about`, and `/invite` — quick connection, usage, bot-information, and installation-link commands.
+- `/reload` and `/shutdown` — administrator maintenance commands. `/reload` explains the command redeployment process; `/shutdown` stops the bot gracefully.
 
 ## Development
 
