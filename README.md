@@ -15,7 +15,7 @@ Duccky AI is a self-hosted Discord assistant powered exclusively by [LM Studio](
 - Dedicated AI channel configured with `/config channel`
 - Persistent conversation context per user and channel
 - Local LM Studio OpenAI-compatible chat endpoint
-- Slash commands: `/ask`, `/reset`, `/memory`, `/model`, `/config`, `/ping`, `/help`, `/about`, and `/invite`
+- Slash commands for memory, status, setup, and maintenance
 - SQLite for local development, with a documented path to PostgreSQL production deployments
 - Pino logging, graceful shutdown, health endpoint, Zod validation, cooldowns, and rate limiting
 
@@ -101,15 +101,33 @@ When `bot started` appears in the terminal, open Discord and try `/ping` or ment
 
 ## Commands
 
-| Command                               | Description                                    | Access        |
-| ------------------------------------- | ---------------------------------------------- | ------------- |
-| `/ask prompt`                         | Ask Duccky AI a question                       | Everyone      |
-| `/reset`                              | Clear your conversation in the current channel | Everyone      |
-| `/memory`                             | Explain how memory works                       | Everyone      |
-| `/ping`, `/help`, `/about`, `/invite` | Utility commands                               | Everyone      |
-| `/model name`                         | Change the server model identifier             | Administrator |
-| `/config channel`                     | Set or disable the dedicated AI channel        | Administrator |
-| `/reload`, `/shutdown`                | Operational commands                           | Administrator |
+Duccky AI is mainly designed to be used by mentioning the bot or by talking in the configured AI channel. Slash commands are kept for actions that need a clear button-like intent, such as clearing memory, checking setup, or changing server settings.
+
+| Command           | What it does                                  | When to use it                                      | Access        |
+| ----------------- | --------------------------------------------- | --------------------------------------------------- | ------------- |
+| `@Duccky AI ...`  | Ask from any allowed channel                  | Best default way to chat with the bot               | Everyone      |
+| `/ask prompt`     | Ask through a slash command                   | Useful as a fallback, but mostly redundant to tags  | Everyone      |
+| `/reset`          | Clear your saved context in the current channel | Use when the bot is stuck on old context          | Everyone      |
+| `/memory`         | Explain what conversation memory stores       | Use when users ask what the bot remembers           | Everyone      |
+| `/status`         | Show latency, uptime, channel, model, memory, and limits | Best quick check for server setup           | Everyone      |
+| `/ping`           | Show Discord gateway latency                  | Quick check that the bot is alive                   | Everyone      |
+| `/help`           | Show short usage guidance                     | Quick reminder for normal users                     | Everyone      |
+| `/about`          | Show what powers the bot                      | Good for transparency about local LM Studio usage   | Everyone      |
+| `/invite`         | Return the bot invite URL                     | Use when adding the bot to another server           | Everyone      |
+| `/config channel` | Set or disable the dedicated AI channel       | Server setup: let users chat without tagging        | Administrator |
+| `/model name`     | Change the LM Studio model identifier         | Server setup: match the model loaded in LM Studio   | Administrator |
+| `/reload`         | Explain that commands load on restart         | Developer/admin diagnostic only                     | Administrator |
+| `/shutdown`       | Gracefully stop the bot process               | Owner/admin maintenance only                        | Administrator |
+
+Useful command ideas if `/ask` feels unnecessary:
+
+| Command idea     | Why it is more useful                                                   |
+| ---------------- | ----------------------------------------------------------------------- |
+| `/settings`      | Show the active AI channel, model, cooldown, rate limit, and memory size. |
+| `/forget`        | Clear memory with clearer wording than `/reset`; can later support scopes like user/channel/server. |
+| `/privacy`       | Explain where prompts go, what is stored, and how to clear memory.       |
+| `/summarize`     | Summarize the recent channel conversation when users need a recap.       |
+| `/prompt`        | Let admins view or switch bot behavior presets, such as helpful, concise, or roleplay-safe. |
 
 ## Deployment notes
 
