@@ -141,6 +141,54 @@ Duccky AI is mainly designed to be used by mentioning the bot or by talking in t
 | `/reload`         | Explain that commands load on restart         | Developer/admin diagnostic only                     | Administrator |
 | `/shutdown`       | Gracefully stop the bot process               | Owner/admin maintenance only                        | Administrator |
 
+## Command usage and examples
+
+Here are concise examples showing how to use the slash commands from Discord's command UI. Replace placeholders like `<text>` or `#channel` with real values.
+
+- `/ask prompt:<text>` — Ask Duccky AI a question. Example: `/ask prompt:What's new in Node.js 22?` or mention the bot directly: `@Duccky AI What is the weather today?` If you want the bot to analyze an image attach the image when using the slash UI or mention the bot and attach the image.
+
+- `/reset` — Clear your conversation memory in the current channel. Example: `/reset`
+
+- `/memory` — Show what the bot keeps in conversation memory for the current channel. Example: `/memory`
+
+- `/model name:<model-id>` — Administrator-only: set the LM Studio model used for this server. Example: `/model name:google/gemma-4-e2b`
+
+- `/status` — Show bot status, configured AI channel, model, memory window, cooldowns, and rate limits. Example: `/status`
+
+- `/ping` — Check Discord gateway latency. Example: `/ping`
+
+- `/help` — Shows short usage guidance and examples. Example: `/help`
+
+- `/about` — Brief description of Duccky AI. Example: `/about`
+
+- `/invite` — Returns an invite URL for this bot. Example: `/invite`
+
+- `/search query:<terms>` — Run a live web search using the configured SearXNG instance. Example: `/search query:latest Node.js release`.
+
+- `/config channel [channel]` — Administrator-only: set a dedicated AI channel or disable it. Examples:
+	- Set: choose a text channel in the slash UI (e.g. `/config channel channel:#ai`).
+	- Disable: run `/config channel` and leave the `channel` option empty in the UI (submit without selecting a channel) — the bot will switch to mention-only mode.
+
+- `/reload` — Developer/admin diagnostic: explains commands are loaded on restart. Example: `/reload`
+
+- `/shutdown` — Administrator-only: gracefully stops the bot process. Example: `/shutdown`
+
+Registering commands after changes
+
+After you add or modify commands, redeploy the registered slash commands so Discord's UI shows the new options. In development you can run:
+
+```bash
+tsx src/deployCommands.ts
+```
+
+Or after building:
+
+```bash
+node ./dist/deployCommands.js
+```
+
+If your bot uses a `GUILD_ID` in `.env` the commands register faster for that server; otherwise they are registered globally and may take longer to appear.
+
 Useful command ideas if `/ask` feels unnecessary:
 
 | Command idea     | Why it is more useful                                                   |
