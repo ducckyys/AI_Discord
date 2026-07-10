@@ -1,13 +1,19 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import defaultFluxWorkflow from "./workflow/flux-schnell.json" with { type: "json" };
+import defaultFluxGGUFWorkflow from "./workflow/flux-gguf.json" with { type: "json" };
 import type { ComfyOutputImage, ComfyWorkflow } from "./types.js";
 import { ImageGenerationError } from "./types.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
-export async function loadWorkflow(workflowPath?: string): Promise<ComfyWorkflow> {
-  if (!workflowPath) return structuredClone(defaultFluxWorkflow) as ComfyWorkflow;
+export async function loadWorkflow(workflowPath?: string, imageModel?: string): Promise<ComfyWorkflow> {
+  if (!workflowPath) {
+    if (imageModel?.toLowerCase().endsWith(".gguf")) {
+      return structuredClone(defaultFluxGGUFWorkflow) as ComfyWorkflow;
+    }
+    return structuredClone(defaultFluxWorkflow) as ComfyWorkflow;
+  }
 
   const resolved = path.resolve(process.cwd(), workflowPath);
   try {

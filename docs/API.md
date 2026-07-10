@@ -51,4 +51,8 @@ GET  {COMFYUI_URL}/history/{prompt_id}
 GET  {COMFYUI_URL}/view?filename=...&subfolder=...&type=output
 ```
 
-The workflow JSON is loaded from `COMFYUI_WORKFLOW_PATH` when set, otherwise from `src/ai/image/workflow/flux-schnell.json`. The workflow must include a `{{PROMPT}}` placeholder. The optional `{{MODEL}}` placeholder is replaced with `IMAGE_MODEL`.
+The workflow JSON is loaded from `COMFYUI_WORKFLOW_PATH` when set, otherwise the bot uses a built-in default workflow.
+
+- If `IMAGE_MODEL` ends with `.gguf`, the bot automatically selects a GGUF-friendly fallback workflow.
+- The workflow must include a `{{PROMPT}}` placeholder.
+- If your ComfyUI graph uses a model placeholder, the workflow may also include `{{MODEL}}`, which is replaced with `IMAGE_MODEL`.

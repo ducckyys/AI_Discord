@@ -15,7 +15,12 @@ export class ComfyUIProvider {
   ) {}
 
   public async generate(prompt: string): Promise<{ filename: string; data: Buffer; contentType: string }> {
-    const workflow = prepareWorkflow(await loadWorkflow(imageConfig.workflowPath), prompt, imageConfig.model, randomInt(1, Number.MAX_SAFE_INTEGER));
+    const workflow = prepareWorkflow(
+      await loadWorkflow(imageConfig.workflowPath, imageConfig.model),
+      prompt,
+      imageConfig.model,
+      randomInt(1, 2 ** 31),
+    );
     const promptId = await this.queuePrompt(workflow);
     const image = await this.waitForImage(promptId);
     const downloaded = await this.downloadImage(image);
@@ -64,7 +69,10 @@ export class ComfyUIProvider {
 
   private async fetchJson<T>(pathName: string, init: RequestInit): Promise<T> {
     const response = await this.fetchWithTimeout(new URL(pathName, `${this.baseUrl}/`), init);
-    if (!response.ok) throw new ImageGenerationError(`ComfyUI /${pathName} returned HTTP ${response.status}.`);
+    if (!response.ok) {
+      const body = await response.text();
+      throw new ImageGenerationError(`ComfyUI /${pathName} returned HTTP ${response.status}.${formatErrorBody(body)}`);
+    }
     return (await response.json()) as T;
   }
 
@@ -88,4 +96,9 @@ function contentTypeFromName(name: string): string {
   if (/\.jpe?g$/i.test(name)) return "image/jpeg";
   if (/\.webp$/i.test(name)) return "image/webp";
   return "image/png";
+}
+
+function formatErrorBody(body: string): string {
+  const compact = body.replace(/\s+/g, " ").trim();
+  return compact ? ` ${compact.slice(0, 500)}` : "";
 }

@@ -1,33 +1,29 @@
 # Duccky AI
 
-Duccky AI is a self-hosted Discord assistant powered exclusively by [LM Studio](https://lmstudio.ai). Invite it to a server, mention it in a conversation, or configure a dedicated AI channel. Your prompts are processed by the model running on your own machine—no OpenAI API key or cloud AI account is required.
+Duccky AI is a self-hosted Discord assistant that runs on local AI services.
 
-## Why Duccky AI
+- Chat: **LM Studio**
+- Optional live search: **SearXNG**
+- Optional image generation: **ComfyUI**
 
-- **Private by design** — prompts are sent only to your configured LM Studio endpoint.
-- **Server-aware** — each Discord server has separate settings and conversation memory.
-- **Practical controls** — slash commands, cooldowns, rate limits, permission checks, and safe error messages.
-- **Ready to maintain** — TypeScript, Prisma, tests, linting, CI workflows, and clear project documentation.
+This repository is for people who want a local Discord AI bot without cloud API keys.
 
-## Features
+## What this repo contains
 
-- Reply when mentioned: `@Duccky AI explain TypeScript simply`
-- Dedicated AI channel configured with `/config channel`
-- Persistent conversation context per user and channel
-- Local LM Studio OpenAI-compatible chat endpoint
-- Optional live web search through your SearXNG instance
-- Optional image generation through your ComfyUI instance
-- Slash commands for memory, status, setup, and maintenance
-- SQLite for local development, with a documented path to PostgreSQL production deployments
-- Pino logging, graceful shutdown, health endpoint, Zod validation, cooldowns, and rate limiting
+- TypeScript Discord bot implementation
+- LM Studio chat integration
+- Optional SearXNG search integration
+- Optional ComfyUI image integration
+- Prisma schema for local development
+- Tests, linting, and documentation
 
 ## Requirements
 
-- Node.js 22 LTS or newer
-- pnpm 9 or newer (Corepack is included with modern Node.js)
+- Node.js 22 or newer
 - A Discord application and bot token
-- LM Studio with a chat-capable model loaded
-- Optional: ComfyUI for local image generation
+- LM Studio running locally with a chat-capable model
+- Optional: SearXNG for search
+- Optional: ComfyUI for images
 
 ## Quick start
 
@@ -35,11 +31,17 @@ Duccky AI is a self-hosted Discord assistant powered exclusively by [LM Studio](
 
 ```bash
 git clone https://github.com/YOUR_GITHUB_USERNAME/duccky-ai.git
-cd duccky-ai
+dcd duccky-ai
+npm install
+```
+
+If you use pnpm:
+
+```bash
 corepack pnpm install
 ```
 
-### 2. Create your environment file
+### 2. Create `.env`
 
 Windows PowerShell:
 
@@ -53,7 +55,7 @@ macOS/Linux:
 cp .env.example .env
 ```
 
-Open `.env` and set the required values:
+Open `.env` and fill in the required values:
 
 ```env
 DISCORD_TOKEN=your_bot_token
@@ -65,13 +67,13 @@ AI_PROVIDER=lmstudio
 MODEL=google/gemma-4-e2b
 IMAGE_PROVIDER=comfyui
 COMFYUI_URL=http://127.0.0.1:8188
-IMAGE_MODEL=flux1-schnell
+IMAGE_MODEL=flux1-schnell-Q3_K_S.gguf
 COMFYUI_WORKFLOW_PATH=
 LOG_LEVEL=info
 PORT=3000
 ```
 
-`GUILD_ID` is recommended while developing because commands appear in the chosen test server immediately. Remove or leave it empty before global deployment.
+`GUILD_ID` is useful during development because commands register faster in one server, but it is optional for global deployment.
 
 ### 3. Configure Discord
 
@@ -98,27 +100,44 @@ Invoke-RestMethod http://127.0.0.1:1234/v1/models
 ### 5. Create the database and start the bot
 
 ```bash
+npm run prisma:generate
+npm run build
+npm run prisma:migrate deploy
+npm run deploy:commands
+npm run dev
+```
+
+If you use pnpm:
+
+```bash
 corepack pnpm prisma:generate
-corepack pnpm prisma migrate deploy
+corepack pnpm build
+corepack pnpm prisma:migrate deploy
 corepack pnpm deploy:commands
 corepack pnpm dev
 ```
 
-When `bot started` appears in the terminal, open Discord and try `/ping` or mention the bot. Keep both LM Studio and this terminal running while using the bot.
+When the terminal shows `bot started`, open Discord and test `/ping` or mention the bot. Keep LM Studio and this terminal running while using the bot.
 
 ### 6. Enable web search with SearXNG (optional)
 
-Run a SearXNG instance, then set `SEARXNG_URL` in `.env` to its base URL. The default is `http://127.0.0.1:8080`. Its JSON response format must be enabled in SearXNG's `settings.yml`; this bot sends requests to `/search` with `format=json`.
+Start a SearXNG instance, then set `SEARXNG_URL` in `.env` to its base URL. The default is `http://127.0.0.1:8080`.
 
-For example, ask `cari berita AI terbaru` or `latest Node.js release`. The bot supplies the returned results to LM Studio and includes the source links in its reply. Configure `SEARXNG_TIMEOUT_MS` and `SEARXNG_MAX_RESULTS` only if the defaults (10 seconds and 5 results) do not suit your instance.
+This bot sends requests to `/search?format=json`. Your SearXNG instance must support JSON search output.
+
+For example, ask `cari berita AI terbaru` or `latest Node.js release`. The bot will include the search results in the prompt sent to LM Studio.
 
 ### 7. Enable image generation with ComfyUI (optional)
 
-Start ComfyUI and keep `COMFYUI_URL` pointed at its API server. The default is `http://127.0.0.1:8188`.
+Start ComfyUI and set `COMFYUI_URL` in `.env` to the ComfyUI API URL. The default is `http://127.0.0.1:8188`.
 
-The bot sends a workflow to `/prompt`, waits through `/history/{prompt_id}`, downloads the generated image from `/view`, and sends it back to Discord as an attachment.
+The bot sends a workflow to ComfyUI and downloads the generated image from `/view`.
 
-By default the bot uses `src/ai/image/workflow/flux-schnell.json`, which contains `{{PROMPT}}` and `{{MODEL}}` placeholders. If your ComfyUI setup uses a different graph, export the API workflow JSON from ComfyUI, put it in this project, and set `COMFYUI_WORKFLOW_PATH` to that file path. The workflow must include `{{PROMPT}}` where the user prompt should be injected and may include `{{MODEL}}` where `IMAGE_MODEL` should be injected.
+- If `COMFYUI_WORKFLOW_PATH` is empty, the bot uses the built-in default workflow.
+- If `IMAGE_MODEL` ends with `.gguf`, the bot uses a GGUF-friendly built-in workflow.
+- If your ComfyUI graph is custom, export the workflow JSON from ComfyUI and set `COMFYUI_WORKFLOW_PATH`.
+
+The workflow must contain `{{PROMPT}}`. It may also include `{{MODEL}}` if your graph accepts a model placeholder.
 
 ## Commands
 

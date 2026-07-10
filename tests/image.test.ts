@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isImageGenerationRequest } from "../src/ai/image/intent.js";
-import { extractOutputImages, prepareWorkflow } from "../src/ai/image/workflow.js";
+import { extractOutputImages, loadWorkflow, prepareWorkflow } from "../src/ai/image/workflow.js";
 
 describe("image generation intent", () => {
   it("detects image generation prompts", () => {
@@ -17,6 +17,14 @@ describe("ComfyUI workflow helpers", () => {
       "1": { inputs: { text: "{{PROMPT}}", ckpt_name: "{{MODEL}}", seed: 1 } },
     }, "a duck astronaut", "flux-test", 123)).toEqual({
       "1": { inputs: { text: "a duck astronaut", ckpt_name: "flux-test", seed: 123 } },
+    });
+  });
+
+  it("uses the GGUF workflow when the image model ends with .gguf", async () => {
+    const workflow = await loadWorkflow(undefined, "model.gguf");
+    expect(workflow["1"]).toEqual({
+      class_type: "UnetLoaderGGUF",
+      inputs: { ckpt_name: "{{MODEL}}" },
     });
   });
 
