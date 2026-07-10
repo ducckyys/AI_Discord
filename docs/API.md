@@ -1,5 +1,38 @@
-# API
+# API Reference
 
-`GET /health` returns `{ status: "ok", discord: "ready" | "connecting" }` and is intended for local/container health checks.
+Duccky AI does not expose a public business API. Its small Fastify server is for health monitoring, while AI inference is delegated to your local LM Studio server.
 
-LM Studio is called at `POST {LMSTUDIO_URL}/chat/completions` using the OpenAI-compatible chat-completions format. No OpenAI API is used.
+## Health check
+
+### `GET /health`
+
+Returns service and Discord gateway status.
+
+```json
+{
+  "status": "ok",
+  "discord": "ready"
+}
+```
+
+The server listens on `127.0.0.1` and the configured `PORT` (default `3000`). It is intentionally local-only.
+
+## LM Studio integration
+
+The provider sends a `POST` request to:
+
+```text
+{LMSTUDIO_URL}/chat/completions
+```
+
+With the standard OpenAI-compatible JSON shape:
+
+```json
+{
+  "model": "google/gemma-4-e2b",
+  "messages": [{ "role": "user", "content": "Hello" }],
+  "temperature": 0.7
+}
+```
+
+The bot validates malformed responses and shows a safe Discord-facing error instead of an internal stack trace.

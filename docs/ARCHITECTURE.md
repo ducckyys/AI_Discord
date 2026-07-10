@@ -1,5 +1,47 @@
 # Architecture
 
-Discord events call command/event handlers. Handlers delegate to services, middleware, and repositories. `AskAI` builds a bounded conversation context, calls the abstract `AIProvider`, and persists messages through Prisma. The current provider is LM Studio; adding another provider only requires implementing `AIProvider`.
+Duccky AI follows a modular TypeScript architecture designed for a self-hosted Discord bot. The design separates Discord transport concerns from AI orchestration, persistence, and operational controls.
 
-Development uses SQLite. Prisma datasource providers are compile-time choices; for PostgreSQL production, use a PostgreSQL-specific Prisma schema/migration deployment and `DATABASE_URL` for that database.
+## Request flow
+
+```text
+Discord mention or slash command
+  → event / command handler
+  → validation, permissions, cooldown, rate limit
+  → settings and conversation repositories
+  → AskAI service
+  → LM Studio OpenAI-compatible endpoint
+  → persisted response and Discord reply
+```
+
+## Components
+
+| Area             | Responsibility                                                           |
+| ---------------- | ------------------------------------------------------------------------ |
+| `src/events`     | Receives Discord gateway events and routes interactions/messages.        |
+| `src/commands`   | Declares slash commands and their access rules.                          |
+| `src/ai`         | System prompts, provider abstraction, context assembly, and AI requests. |
+| `src/database`   | Prisma client and repository implementations.                            |
+| `src/services`   | Application services for guilds, users, settings, and AI orchestration.  |
+| `src/middleware` | Cooldown, rate-limit, permission, and command logging helpers.           |
+| `src/config`     | Typed application configuration derived from environment variables.      |
+
+## Data model
+
+Prisma stores five primary entities:
+
+- **Guild** — a Discord server known to the bot.
+- **User** — a Discord user participating in conversations.
+- **Settings** — server-specific AI channel, model, context, cooldown, and rate-limit settings.
+- **Conversation** — one user’s context within a server channel.
+- **Message** — persisted user and assistant messages belonging to a conversation.
+
+Conversation memory is scoped by `guildId`, `userId`, and `channelId`; messages from one server or channel are never used as context in another.
+
+## AI provider boundary
+
+`AIProvider` defines the small interface required to send chat messages. `LMStudioProvider` is the only enabled implementation and uses the OpenAI-compatible endpoint at `/v1/chat/completions`. Future providers can implement the interface without changing command, event, or repository logic.
+
+## Deployment model
+
+Development uses SQLite. For production, deploy the bot with PostgreSQL, a production-specific Prisma datasource and migration workflow, process supervision, encrypted secrets, and persistent logs. The local LM Studio server must be reachable from the bot host; never expose it publicly without authentication and network controls.
