@@ -1,6 +1,8 @@
-import { SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import type { Command } from "../../interfaces/command.js";
 import { InternetService, InternetSearchError } from "../../ai/internet/index.js";
+import { warningEmbed } from "../../embeds/response.js";
+import { colors } from "../../utils/colors.js";
 
 export const searchCommand: Command = {
   data: new SlashCommandBuilder()
@@ -16,15 +18,26 @@ export const searchCommand: Command = {
       const key = i.guildId ? `${i.guildId}:${i.user.id}` : `${i.user.id}`;
       const results = await internet.search(query, key);
 
-      if (!results.length) return void (await i.editReply({ content: "No results found." }));
+      if (!results.length) {
+        await i.editReply({ embeds: [warningEmbed(`No results found for \`${query}\`.`, "No Results")] });
+        return;
+      }
 
-      const lines = results.map((r, idx) => `${idx + 1}. ${r.title}\n${r.url}\n${r.snippet}`);
-      // If message too long, send first few only
-      const payload = lines.join("\n\n");
-      await i.editReply({ content: payload });
+      const embed = new EmbedBuilder()
+        .setTitle("Search Results")
+        .setColor(colors.info)
+        .setDescription(`Results for \`${query}\``)
+        .addFields(
+          results.slice(0, 5).map((result, index) => ({
+            name: `${index + 1}. ${result.title.slice(0, 240)}`,
+            value: `[Open result](${result.url})\n${result.snippet.slice(0, 700) || "No description available."}`,
+          })),
+        );
+
+      await i.editReply({ embeds: [embed] });
     } catch (err) {
       const message = err instanceof InternetSearchError ? err.message : "Search failed. Check SEARXNG_URL and that the instance is reachable.";
-      await i.editReply({ content: message });
+      await i.editReply({ embeds: [warningEmbed(message, "Search Failed")] });
     }
   },
 };
