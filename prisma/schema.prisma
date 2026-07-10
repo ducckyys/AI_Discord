@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+
+model Guild {
+  id String @id
+  name String
+  joinedAt DateTime @default(now())
+  settings Settings?
+  conversations Conversation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id String @id
+  username String
+  isBot Boolean @default(false)
+  conversations Conversation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id String @id @default(cuid())
+  guildId String
+  userId String
+  channelId String
+  summary String?
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([guildId, userId, channelId])
+  @@index([guildId, channelId])
+}
+
+model Message {
+  id String @id @default(cuid())
+  conversationId String
+  discordMessageId String? @unique
+  role String
+  content String
+  tokens Int @default(0)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([conversationId, createdAt])
+}
+
+model Settings {
+  id String @id @default(cuid())
+  guildId String @unique
+  aiChannelId String?
+  model String @default("qwen3")
+  maxContextMessages Int @default(12)
+  cooldownMs Int @default(5000)
+  rateLimitMax Int @default(8)
+  rateLimitWindowMs Int @default(60000)
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

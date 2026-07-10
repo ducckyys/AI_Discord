@@ -1,0 +1,2 @@
+import type { Client } from "discord.js"; import { registerErrors } from "./error.js"; import { registerGuildCreate } from "./guildCreate.js"; import { registerGuildDelete } from "./guildDelete.js"; import { registerInteractions } from "./interactionCreate.js"; import { registerMessages } from "./messageCreate.js"; import { registerReady } from "./ready.js";
+export const registerBotEvents = (client: Client) => { registerReady(client); registerErrors(client); registerGuildCreate(client); registerGuildDelete(client); registerInteractions(client); registerMessages(client); };

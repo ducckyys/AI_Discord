@@ -1,0 +1,1 @@
+export class SessionMemory { private readonly values = new Map<string, string>(); public get(key: string) { return this.values.get(key); } public set(key: string, value: string) { this.values.set(key, value); } public clear(key: string) { this.values.delete(key); } }

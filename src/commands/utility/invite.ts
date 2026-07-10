@@ -1,0 +1,2 @@
+import { SlashCommandBuilder } from "discord.js"; import type { Command } from "../../interfaces/command.js";
+export const inviteCommand: Command = { data: new SlashCommandBuilder().setName("invite").setDescription("Get the bot invite URL"), async execute(i) { const id = i.client.user?.id; await i.reply({ content: id ? `https://discord.com/oauth2/authorize?client_id=${id}&scope=bot%20applications.commands&permissions=274877975552` : "Bot is not ready yet.", ephemeral: true }); } };

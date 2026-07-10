@@ -1,0 +1,2 @@
+import { SlashCommandBuilder } from "discord.js"; import type { Command } from "../../interfaces/command.js";
+export const memoryCommand: Command = { data: new SlashCommandBuilder().setName("memory").setDescription("Explain conversation memory"), async execute(i) { await i.reply({ content: "Duccky AI keeps recent messages in this channel to provide context. Use /reset to clear your memory.", ephemeral: true }); } };

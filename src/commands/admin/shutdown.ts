@@ -1,0 +1,2 @@
+import { SlashCommandBuilder } from "discord.js"; import type { Command } from "../../interfaces/command.js"; import { isAdministrator } from "../../middleware/permission.js";
+export const shutdownCommand: Command = { data: new SlashCommandBuilder().setName("shutdown").setDescription("Safely stop the bot"), async execute(i) { if (!isAdministrator(i)) return void await i.reply({ content: "Administrator permission is required.", ephemeral: true }); await i.reply({ content: "Shutting down." }); process.kill(process.pid, "SIGTERM"); } };

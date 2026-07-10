@@ -1,0 +1,2 @@
+import { SlashCommandBuilder } from "discord.js"; import type { Command } from "../../interfaces/command.js";
+export const helpCommand: Command = { data: new SlashCommandBuilder().setName("help").setDescription("Show Duccky AI help"), async execute(i) { await i.reply({ content: "Use /ask to chat, mention me in any channel, or configure a dedicated channel with /config channel. Use /reset to clear context.", ephemeral: true }); } };

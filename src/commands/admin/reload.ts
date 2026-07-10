@@ -1,0 +1,2 @@
+import { SlashCommandBuilder } from "discord.js"; import type { Command } from "../../interfaces/command.js"; import { isAdministrator } from "../../middleware/permission.js";
+export const reloadCommand: Command = { data: new SlashCommandBuilder().setName("reload").setDescription("Reload command registry"), async execute(i) { if (!isAdministrator(i)) return void await i.reply({ content: "Administrator permission is required.", ephemeral: true }); await i.reply({ content: "Commands are loaded statically; restart the bot after deployment changes.", ephemeral: true }); } };
