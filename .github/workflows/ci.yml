@@ -5,6 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: "file:./dev.db"
+      DISCORD_TOKEN: "test-token"
+      CLIENT_ID: "test-client"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
