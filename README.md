@@ -1,46 +1,44 @@
 # Duccky AI
 
-This repository also has an Indonesian translation: [README (Bahasa Indonesia)](README.id.md)
+[Bahasa Indonesia](README.id.md)
 
-Duccky AI is a self-hosted Discord assistant that runs on local AI services.
+Duccky AI is a self-hosted Discord assistant powered by a locally running [LM Studio](https://lmstudio.ai/) server. It keeps conversations and configuration in a local SQLite database, and can optionally search the web through SearXNG.
 
-- Chat: **LM Studio**
-- Optional live search: **SearXNG**
+## Features
 
-This repository is for people who want a local Discord AI bot without cloud API keys.
-
-## What this repo contains
-
-- TypeScript Discord bot implementation
-- LM Studio chat integration
-- Optional SearXNG search integration
-- Prisma schema for local development
-- Tests, linting, and documentation
+- Chat by mentioning the bot, in a dedicated AI channel, or with `/ask`
+- Optional image attachment analysis with `/ask`
+- Per-server AI channel and LM Studio model settings
+- Channel conversation memory that users can clear with `/reset`
+- Optional web search through a self-hosted SearXNG instance
+- Slash commands for health, setup, moderation, and maintenance
+- Local-only defaults: no hosted AI API key is required
 
 ## Requirements
 
 - Node.js 22 or newer
+- pnpm 9 or newer (recommended), or npm
 - A Discord application and bot token
-- LM Studio running locally with a chat-capable model
-- Optional: SearXNG for search
+- LM Studio running locally with a loaded chat-capable model
+- Optional: a SearXNG instance for `/search`
 
-## Quick start
+## Setup
 
-### 1. Clone and install
+### 1. Install dependencies
 
 ```bash
 git clone https://github.com/YOUR_GITHUB_USERNAME/duccky-ai.git
-dcd duccky-ai
-npm install
-```
-
-If you use pnpm:
-
-```bash
+cd duccky-ai
 corepack pnpm install
 ```
 
-### 2. Create `.env`
+With npm:
+
+```bash
+npm install
+```
+
+### 2. Create and configure `.env`
 
 Windows PowerShell:
 
@@ -54,180 +52,125 @@ macOS/Linux:
 cp .env.example .env
 ```
 
-Open `.env` and fill in the required values:
+Set at least the required values:
 
 ```env
 DISCORD_TOKEN=your_bot_token
 CLIENT_ID=your_discord_application_id
-GUILD_ID=your_test_server_id
+GUILD_ID=your_development_server_id
 DATABASE_URL="file:./dev.db"
-LMSTUDIO_URL=http://127.0.0.1:1234/v1
-AI_PROVIDER=lmstudio
-MODEL=google/gemma-4-e4b
-LOG_LEVEL=info
-PORT=3000
+LMSTUDIO_URL=http://localhost:1234/v1
+MODEL=qwen3
 ```
 
-`GUILD_ID` is useful during development because commands register faster in one server, but it is optional for global deployment.
+`GUILD_ID` is optional. When present, commands are registered only in that server and appear quickly; without it, commands are registered globally and can take longer to propagate.
+
+Available settings:
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DISCORD_TOKEN` | Yes | Discord bot token. Keep it secret. |
+| `CLIENT_ID` | Yes | Discord application ID. |
+| `GUILD_ID` | No | Development server ID for guild-scoped commands. |
+| `DATABASE_URL` | Yes | Prisma SQLite URL, normally `file:./dev.db`. |
+| `LMSTUDIO_URL` | No | LM Studio OpenAI-compatible base URL. Default: `http://localhost:1234/v1`. |
+| `AI_PROVIDER` | No | AI provider. Only `lmstudio` is supported. |
+| `MODEL` | No | Fallback LM Studio model identifier. Default: `qwen3`. |
+| `CREATOR_ID` | No | Discord user ID shown by `/about`. |
+| `SEARXNG_URL` | No | SearXNG base URL for `/search`. |
+| `SEARXNG_TIMEOUT_MS` | No | Search timeout in milliseconds. Default: `10000`. |
+| `SEARXNG_MAX_RESULTS` | No | Search results sent to the bot, from 1 to 10. Default: `5`. |
+| `LOG_LEVEL` | No | Pino log level. Default: `info`. |
+| `PORT` | No | Local health endpoint port. Default: `3000`. |
 
 ### 3. Configure Discord
 
 1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications).
-2. Copy its **Application ID** into `CLIENT_ID`.
-3. Create or reset the bot token on the **Bot** page and copy it into `DISCORD_TOKEN`. Never commit this token.
+2. Copy its **Application ID** to `CLIENT_ID`.
+3. On the **Bot** page, create or reset the token and set it as `DISCORD_TOKEN`.
 4. Enable **Message Content Intent** under **Bot → Privileged Gateway Intents**.
-5. Under **Installation**, use the `bot` and `applications.commands` scopes. Grant the bot View Channels, Send Messages, Embed Links, and Read Message History.
-6. Invite the bot to your server with the generated install link.
+5. Under **Installation**, add the `bot` and `applications.commands` scopes. Grant the bot View Channels, Send Messages, Embed Links, and Read Message History.
+6. Install the bot in your server using the generated install link.
 
-### 4. Configure LM Studio
+### 4. Start LM Studio
 
-1. Open LM Studio and load a chat-capable model.
-2. Go to **Developer → Local Server** and start the server.
-3. Copy the **API Model Identifier** into `MODEL`. For example: `google/gemma-4-e2b`.
-4. Keep `LMSTUDIO_URL` as `http://127.0.0.1:1234/v1` when bot and LM Studio run on the same computer.
+1. Load a chat-capable model in LM Studio.
+2. Open **Developer → Local Server** and start the server.
+3. Copy the displayed API model identifier to `MODEL` if it differs from `qwen3`.
 
-Test the server:
+When LM Studio and the bot run on the same machine, leave `LMSTUDIO_URL` set to `http://localhost:1234/v1`. Verify the server with:
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:1234/v1/models
+Invoke-RestMethod http://localhost:1234/v1/models
 ```
 
-### 5. Create the database and start the bot
-
-```bash
-npm run prisma:generate
-npm run build
-npm run prisma:migrate deploy
-npm run deploy:commands
-npm run dev
-```
-
-If you use pnpm:
+### 5. Create the database and run the bot
 
 ```bash
 corepack pnpm prisma:generate
-corepack pnpm build
-corepack pnpm prisma:migrate deploy
+corepack pnpm prisma:migrate
 corepack pnpm deploy:commands
 corepack pnpm dev
 ```
 
-When the terminal shows `bot started`, open Discord and test `/ping` or mention the bot. Keep LM Studio and this terminal running while using the bot.
+For a production build:
 
-### 6. Enable web search with SearXNG (optional)
+```bash
+corepack pnpm build
+corepack pnpm start
+```
 
-Start a SearXNG instance, then set `SEARXNG_URL` in `.env` to its base URL. The default is `http://127.0.0.1:8080`.
+Use the npm equivalents (`npm run <script>`) if you installed with npm. After changing a slash command, run `corepack pnpm deploy:commands` again.
 
-This bot sends requests to `/search?format=json`. Your SearXNG instance must support JSON search output.
+## Optional web search
 
-For example, ask `cari berita AI terbaru` or `latest Node.js release`. The bot will include the search results in the prompt sent to LM Studio.
+Run a SearXNG instance that supports JSON output, then set `SEARXNG_URL` to its base URL. Duccky AI requests SearXNG's `/search?format=json` endpoint.
 
+Once configured, use `/search query:<terms>`. Search errors usually mean the URL is unreachable or the instance does not expose JSON search results.
+
+## How to use it
+
+By default, mention the bot in a server channel:
+
+```text
+@Duccky AI Explain TypeScript generics simply.
+```
+
+An administrator can set a dedicated channel with `/config channel`. Messages in that channel are sent to the bot without a mention. Run `/config channel` without selecting a channel to return to mention-only mode.
+
+You can also use `/ask prompt:<text>` and optionally attach an image for analysis.
 
 ## Commands
 
-Duccky AI is mainly designed to be used by mentioning the bot or by talking in the configured AI channel. Slash commands are kept for actions that need a clear button-like intent, such as clearing memory, checking setup, or changing server settings.
+| Command | Description | Access |
+| --- | --- | --- |
+| `@Duccky AI <message>` | Chat with the bot from an allowed channel. | Everyone |
+| `/ask prompt:<text> [image]` | Ask through a slash command; an image attachment is optional. | Everyone |
+| `/search query:<terms>` | Search the web through SearXNG. | Everyone |
+| `/reset` | Clear your saved conversation context in the current channel. | Everyone |
+| `/memory` | Explain the conversation memory behaviour. | Everyone |
+| `/status` | Show uptime, latency, channel, model, and limits. | Everyone |
+| `/ping` | Show Discord gateway latency. | Everyone |
+| `/help` | Show in-Discord usage help. | Everyone |
+| `/about` | Show information about the bot and its creator. | Everyone |
+| `/invite` | Return the bot's invite link. | Everyone |
+| `/config channel [channel]` | Set or disable the dedicated AI channel. | Administrator |
+| `/model name:<model-id>` | Set the LM Studio model for this server. | Administrator |
+| `/reload` | Explain the command reload procedure. | Administrator |
+| `/shutdown` | Gracefully stop the bot process. | Administrator |
 
-| Command           | What it does                                  | When to use it                                      | Access        |
-| ----------------- | --------------------------------------------- | --------------------------------------------------- | ------------- |
-| `@Duccky AI ...`  | Ask from any allowed channel                  | Best default way to chat with the bot               | Everyone      |
-| `/ask prompt`     | Ask through a slash command                   | Useful as a fallback, but mostly redundant to tags  | Everyone      |
-| `/reset`          | Clear your saved context in the current channel | Use when the bot is stuck on old context          | Everyone      |
-| `/memory`         | Explain what conversation memory stores       | Use when users ask what the bot remembers           | Everyone      |
-| `/status`         | Show latency, uptime, channel, model, memory, and limits | Best quick check for server setup           | Everyone      |
-| `/ping`           | Show Discord gateway latency                  | Quick check that the bot is alive                   | Everyone      |
-| `/help`           | Show short usage guidance                     | Quick reminder for normal users                     | Everyone      |
-| `/about`          | Show what powers the bot                      | Good for transparency about local LM Studio usage   | Everyone      |
-| `/invite`         | Return the bot invite URL                     | Use when adding the bot to another server           | Everyone      |
-| `/config channel` | Set or disable the dedicated AI channel       | Server setup: let users chat without tagging        | Administrator |
-| `/model name`     | Change the LM Studio model identifier         | Server setup: match the model loaded in LM Studio   | Administrator |
-| `/reload`         | Explain that commands load on restart         | Developer/admin diagnostic only                     | Administrator |
-| `/shutdown`       | Gracefully stop the bot process               | Owner/admin maintenance only                        | Administrator |
+Model selection uses this priority: the model set with `/model`, then a model discovered from LM Studio, then `MODEL` in `.env`.
 
-## Command usage and examples
-
-Here are concise examples showing how to use the slash commands from Discord's command UI. Replace placeholders like `<text>` or `#channel` with real values.
-
-- `/ask prompt:<text>` — Ask Duccky AI a question. Example: `/ask prompt:What's new in Node.js 22?` or mention the bot directly: `@Duccky AI What is the weather today?` If you want the bot to analyze an image attach the image when using the slash UI or mention the bot and attach the image.
-
-- `/reset` — Clear your conversation memory in the current channel. Example: `/reset`
-
-- `/memory` — Show what the bot keeps in conversation memory for the current channel. Example: `/memory`
-
-- `/model name:<model-id>` — Administrator-only: set the LM Studio model used for this server. Example: `/model name:google/gemma-4-e2b`
- - `/model name:<model-id>` — Administrator-only: set the LM Studio model used for this server. Example: `/model name:google/gemma-4-e4b`
-
-- `/status` — Show bot status, configured AI channel, model, memory window, cooldowns, and rate limits. Example: `/status`
-
-- `/ping` — Check Discord gateway latency. Example: `/ping`
-
-- `/help` — Shows short usage guidance and examples. Example: `/help`
-
-- `/about` — Brief description of Duccky AI. Example: `/about`
-
-- `/invite` — Returns an invite URL for this bot. Example: `/invite`
-
-- `/search query:<terms>` — Run a live web search using the configured SearXNG instance. Example: `/search query:latest Node.js release`.
-
-- `/config channel [channel]` — Administrator-only: set a dedicated AI channel or disable it. Examples:
-	- Set: choose a text channel in the slash UI (e.g. `/config channel channel:#ai`).
-	- Disable: run `/config channel` and leave the `channel` option empty in the UI (submit without selecting a channel) — the bot will switch to mention-only mode.
-
-- `/reload` — Developer/admin diagnostic: explains commands are loaded on restart. Example: `/reload`
-
-- `/shutdown` — Administrator-only: gracefully stops the bot process. Example: `/shutdown`
-
-Registering commands after changes
-
-After you add or modify commands, redeploy the registered slash commands so Discord's UI shows the new options. In development you can run:
+## Development
 
 ```bash
-tsx src/deployCommands.ts
+corepack pnpm lint
+corepack pnpm format:check
+corepack pnpm test
 ```
 
-Or after building:
-
-```bash
-node ./dist/deployCommands.js
-```
-
-If your bot uses a `GUILD_ID` in `.env` the commands register faster for that server; otherwise they are registered globally and may take longer to appear.
-
-## Model selection priority
-
-When resolving which LM Studio model to use for a request, the bot follows this priority:
-
-1. **Pinned model via `/model`** — if a guild administrator set a model with `/model`, that value is used.
-2. **Discovered model** — if no pinned model is present, the bot attempts to detect a loaded model from the LM Studio server and use one that is reported as ready.
-3. **Fallback `MODEL` from `.env`** — if discovery fails, the bot falls back to the `MODEL` value in your `.env`.
-
-This ordering gives administrators deterministic control while allowing automatic fallback to available models on the host.
-
-Useful command ideas if `/ask` feels unnecessary:
-
-| Command idea     | Why it is more useful                                                   |
-| ---------------- | ----------------------------------------------------------------------- |
-| `/settings`      | Show the active AI channel, model, cooldown, rate limit, and memory size. |
-| `/forget`        | Clear memory with clearer wording than `/reset`; can later support scopes like user/channel/server. |
-| `/privacy`       | Explain where prompts go, what is stored, and how to clear memory.       |
-| `/summarize`     | Summarize the recent channel conversation when users need a recap.       |
-| `/prompt`        | Let admins view or switch bot behavior presets, such as helpful, concise, or roleplay-safe. |
-
-## Deployment notes
-
-For one server, set `GUILD_ID`. For multiple servers, remove `GUILD_ID`, rerun `corepack pnpm deploy:commands`, turn on **Public Bot** in Discord, and distribute the installation link. The host machine must remain online because LM Studio runs locally.
-
-For production, use a managed PostgreSQL database and a PostgreSQL Prisma schema/migration workflow. See [Architecture](docs/ARCHITECTURE.md).
-
-## Documentation
-
-- [Documentation index](docs/README.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [API reference](docs/API.md)
-- [Contributing](docs/CONTRIBUTING.md)
-- [Security policy](docs/SECURITY.md)
-- [Privacy policy](docs/PRIVACY_POLICY.md)
-- [Terms of service](docs/TERMS_OF_SERVICE.md)
+See the [documentation index](docs/README.md) for architecture, API, contribution, privacy, security, and terms documentation.
 
 ## License
 
-Licensed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE).
