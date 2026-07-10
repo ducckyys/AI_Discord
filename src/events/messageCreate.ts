@@ -45,7 +45,7 @@ export const registerMessages = (client: Client) => client.on(Events.MessageCrea
     for (const chunk of chunks.slice(1)) await message.reply({ content: chunk, allowedMentions: { repliedUser: false } });
   } catch (error) {
     logger.error({ err: error }, "AI mention request failed");
-    const messageText = error instanceof Error && /image|attachment|download|unsupported|large/i.test(error.message) ? error.message : "I could not reach LM Studio right now. Please try again later.";
+    const messageText = error instanceof Error && /image|attachment|download|unsupported|large|searxng|internet search|comfyui|workflow/i.test(error.message) ? error.message : "I could not reach LM Studio right now. Please try again later.";
     await message.reply(messageText);
   }
 });

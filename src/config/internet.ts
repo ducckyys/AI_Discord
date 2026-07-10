@@ -1,7 +1,7 @@
 import { env } from "../utils/env.js";
 
 export const internetConfig = {
-  provider: env.SEARCH_PROVIDER,
-  braveApiKey: env.BRAVE_API_KEY,
-  tavilyApiKey: env.TAVILY_API_KEY,
+  url: env.SEARXNG_URL.replace(/\/$/, ""),
+  timeoutMs: env.SEARXNG_TIMEOUT_MS,
+  maxResults: env.SEARXNG_MAX_RESULTS,
 } as const;

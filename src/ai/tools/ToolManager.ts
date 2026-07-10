@@ -1,112 +1,41 @@
-// src/ai/tools/ToolManager.ts
+import type { InternetService, SearchResult } from "../internet/index.js";
+import { ImageService, isImageGenerationRequest } from "../image/index.js";
+import type { AIProvider } from "../providers/provider.js";
+import { Intent } from "../router/intent.js";
+import { buildContext } from "../services/context.js";
+import type { Tool, ToolInput, ToolResult } from "./Tool.js";
 
-import { Logger } from '@/utils/logger'; 
-import { ToolRegistry } from './ToolRegistry';
-import { ChatService } from '@/services/askAI'; // Assume this is the primary chat handler
-import { ImageService } from '@/ai/image/imageService'; 
-import { InternetService } from '@/ai/internet';
-// Import other tool handlers (Vision, File) here as they become available
+const searchPattern = /\b(?:search|cari|carikan|googling|terbaru|terkini|hari ini|saat ini|berita|news|latest|current|today|harga|price|cuaca|weather|jadwal|schedule|skor|score|siapa (?:presiden|ceo)|documentation|dokumentasi)\b/i;
 
-/**
- * ToolManager adalah orkestrator utama. Tugasnya adalah menerima permintaan dari AI Router 
- * dan secara berurutan memanggil layanan yang tepat (Chat, Image, Search), sambil menangani logika 
- * pra-pemrosesan, pasca-pemrosesan, dan penanganan error terpusat.
- */
-export class ToolManager {
-    private readonly toolRegistry: ToolRegistry;
+export class ToolManager implements Tool {
+  public readonly intent = Intent.INTERNET_SEARCH;
 
-    /**
-     * Dependency Injection of the global Tool Registry.
-     */
-    constructor() {
-        this.toolRegistry = ToolRegistry.getInstance();
+  public constructor(private readonly provider: AIProvider, private readonly internet: InternetService, private readonly images = new ImageService()) {}
+
+  public async execute(input: ToolInput): Promise<ToolResult> {
+    if (isImageGenerationRequest(input.question, Boolean(input.images?.length))) {
+      const files = await this.images.generate(input.question);
+      return { content: "Gambar selesai dibuat.", files };
     }
 
-    // --- Implementasi Metode Utama untuk Router ---
+    const results = this.needsSearch(input.question)
+      ? await this.internet.search(input.question, `${input.guildId}:${input.userId}`)
+      : [];
+    const question = results.length ? this.questionWithSources(input.question, results) : input.question;
+    const content = await this.provider.chat(buildContext(input.history, question, input.images), { model: input.model });
+    return { content: results.length ? `${content}\n\n${this.formatSources(results)}` : content };
+  }
 
-    /**
-     * Meng-setup dan mendaftarkan semua tool yang tersedia ke dalam registry. 
-     * Ini harus dipanggil sekali saat bot dimulai (di src/config/ai.ts).
-     */
-    public registerAllTools(): void {
-        Logger.info('[ToolManager] Registering all available tools.');
+  private needsSearch(question: string): boolean {
+    return searchPattern.test(question.trim());
+  }
 
-        // 1. Tool Chat AI
-        const chatService = new ChatService(); // Instantiate the service
-        this.toolRegistry.registerTool('chat', chatService);
+  private questionWithSources(question: string, results: SearchResult[]): string {
+    const sources = results.map((result, index) => `${index + 1}. ${result.title}\n${result.snippet}\n${result.url}`).join("\n\n");
+    return `${question}\n\nUse the following live web-search results to answer. State uncertainty when they do not support a claim and do not invent sources.\n\n${sources}`;
+  }
 
-        // 2. Tool Internet Search
-        const internetService = new InternetService();
-        this.toolRegistry.registerTool('internet', internetService);
-
-        // 3. Tool Image Generation
-        const imageService = new ImageService(); // Instantiate the service
-        this.toolRegistry.registerTool('image', imageService);
-
-        // TODO: Register Vision, File Analysis tools here later
-    }
-
-
-    /**
-     * Menjalankan fungsi Chat AI.
-     * @param query Teks prompt yang akan dikirim ke AI.
-     */
-    public async executeChat(query: string): Promise<string> {
-        // The chat service handles the complex logic of memory, prompting, and calling providers.
-        const chatHandler = this.toolRegistry.getTool('chat');
-        if (!chatHandler) throw new Error("Chat tool handler not found.");
-
-        // Passing query directly to ToolExecutor for centralized logging/error handling
-        return await (this['toolExecutor'] as any).executeTool('chat', { query });
-    }
-
-    /**
-     * Menjalankan fungsi Pencarian Internet.
-     * @param query Query spesifik untuk dicari di web.
-     */
-    public async executeInternetSearch(query: string): Promise<string> {
-        const internetHandler = this.toolRegistry.getTool('internet');
-        if (!internetHandler) throw new Error("Internet Search tool handler not found.");
-
-        // Passing query and scope (e.g., 'General Web Search') to ToolExecutor
-        return await (this['toolExecutor'] as any).executeTool('internet', { query, scope: 'General Web Search' });
-    }
-
-
-    /**
-     * Menjalankan fungsi Generasi Gambar.
-     * @param userPrompt Prompt awal dari pengguna.
-     */
-    public async executeImageGeneration(userPrompt: string): Promise<string> {
-        // Di sini harusnya ada logika yang memanggil Prompt Builder dulu, 
-        // sebelum mengirim request ke ImageService.
-
-        const imageHandler = this.toolRegistry.getTool('image');
-        if (!imageHandler) throw new Error("Image Generation tool handler not found.");
-
-        // Placeholder: For now, we assume the prompt builder has run and created a 'request' object.
-        const placeholderRequest = { 
-            prompt: "Placeholder for enhanced prompt.", 
-            model: 'flux1-schnell' 
-        };
-
-        return await (this['toolExecutor'] as any).executeTool('image', { request: placeholderRequest });
-    }
-
-
-    /**
-     * Menjalankan fungsi Analisis Visual/File.
-     */
-    public async executeVision(prompt: string): Promise<string> {
-         // TODO: Implement logic for Vision Tool execution
-        return "Visual analysis tool is pending implementation.";
-    }
-
-    /**
-     * Constructor dan inisialisasi yang menyuntikkan semua dependensi.
-     */
-    constructor() {
-        this['toolExecutor'] = new ToolExecutor(ToolRegistry.getInstance()); // Injecting the Executor dependency
-        // Pastikan pendaftaran tool dilakukan setelah instansiasi
-    }
+  private formatSources(results: SearchResult[]): string {
+    return `Sources:\n${results.map((result, index) => `${index + 1}. [${result.title}](${result.url})`).join("\n")}`;
+  }
 }

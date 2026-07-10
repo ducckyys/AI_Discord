@@ -1,65 +1,91 @@
-// src/ai/image/comfyui.ts
+import { randomInt, randomUUID } from "node:crypto";
+import { imageConfig } from "../../config/image.js";
+import { logger } from "../../utils/logger.js";
+import type { ComfyOutputImage, ComfyWorkflow } from "./types.js";
+import { ImageGenerationError } from "./types.js";
+import { extractOutputImages, loadWorkflow, prepareWorkflow } from "./workflow.js";
 
-import { ImageProvider, ImageGenerationError } from './provider'; // Assuming provider.ts defines the interface
-import axios from 'axios';
-import { Logger } from '@/utils/logger'; 
+type PromptResponse = { prompt_id?: string };
 
-/**
- * Implements the ImageProvider interface specifically for communicating with a local ComfyUI instance.
- * This service is responsible for constructing the API payload and handling network requests.
- */
-export class ComfyUIProvider implements ImageProvider {
-    private readonly apiUrl: string; // e.g., http://localhost:8188/prompt
+export class ComfyUIProvider {
+  public constructor(
+    private readonly baseUrl = imageConfig.url,
+    private readonly timeoutMs = imageConfig.timeoutMs,
+    private readonly pollIntervalMs = imageConfig.pollIntervalMs,
+  ) {}
 
-    /**
-     * Initializes the provider with the target API URL.
-     * @param baseUrl The base URL for the ComfyUI endpoint (e.g., /prompt).
-     */
-    constructor(baseUrl: string) {
-        this.apiUrl = baseUrl;
-        Logger.info(`[ComfyUIProvider] Initialized for API at ${this.apiUrl}`);
+  public async generate(prompt: string): Promise<{ filename: string; data: Buffer; contentType: string }> {
+    const workflow = prepareWorkflow(await loadWorkflow(imageConfig.workflowPath), prompt, imageConfig.model, randomInt(1, Number.MAX_SAFE_INTEGER));
+    const promptId = await this.queuePrompt(workflow);
+    const image = await this.waitForImage(promptId);
+    const downloaded = await this.downloadImage(image);
+    logger.info({ promptId, filename: image.filename }, "ComfyUI image generated");
+    return downloaded;
+  }
+
+  private async queuePrompt(workflow: ComfyWorkflow): Promise<string> {
+    const response = await this.fetchJson<PromptResponse>("prompt", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ prompt: workflow, client_id: randomUUID() }),
+    });
+
+    if (!response.prompt_id) throw new ImageGenerationError("ComfyUI did not return a prompt_id.");
+    return response.prompt_id;
+  }
+
+  private async waitForImage(promptId: string): Promise<ComfyOutputImage> {
+    const deadline = Date.now() + this.timeoutMs;
+    while (Date.now() < deadline) {
+      const history = await this.fetchJson<unknown>(`history/${encodeURIComponent(promptId)}`, { headers: { accept: "application/json" } });
+      const [image] = extractOutputImages(history, promptId);
+      if (image) return image;
+      await delay(this.pollIntervalMs);
     }
 
-    /**
-     * Generates an image by sending a structured prompt and model parameters to the ComfyUI API.
-     * @param enhancedPrompt Prompt yang sudah ditingkatkan secara artistik.
-     * @param model Nama Model (e.g., 'sdxl-turbo').
-     * @returns URL publik dari gambar yang dihasilkan.
-     * @throws ImageGenerationError jika permintaan gagal atau format data salah.
-     */
-    public async generateImage(enhancedPrompt: string, model: string): Promise<string> {
-        if (!enhancedPrompt || !model) {
-            throw new ImageGenerationError("Missing enhanced prompt or model name.");
-        }
+    throw new ImageGenerationError(`ComfyUI image generation timed out after ${Math.round(this.timeoutMs / 1000)}s.`);
+  }
 
-        Logger.info(`[ComfyUIProvider] Attempting to generate image with Model=${model}...`);
+  private async downloadImage(image: ComfyOutputImage): Promise<{ filename: string; data: Buffer; contentType: string }> {
+    const url = new URL("view", `${this.baseUrl}/`);
+    url.searchParams.set("filename", image.filename);
+    url.searchParams.set("subfolder", image.subfolder);
+    url.searchParams.set("type", image.type);
 
-        // --- Payload Structure (MUST match the specific ComfyUI API endpoint structure) ---
-        // NOTE: This is a placeholder payload; actual structure must be validated against your setup.
-        const payload = {
-            prompt: enhancedPrompt, 
-            negative_prompt: "blurry, low quality, bad anatomy", // Standard negative prompt
-            model: model,
-            steps: 30,
-            seed: Math.floor(Math.random() * 100000),
-        };
+    const response = await this.fetchWithTimeout(url);
+    if (!response.ok) throw new ImageGenerationError(`ComfyUI /view returned HTTP ${response.status}.`);
 
-        try {
-            // Using axios to make the POST request to the local ComfyUI API
-            const response = await axios.post<any>(this.apiUrl, payload);
+    return {
+      filename: image.filename,
+      data: Buffer.from(await response.arrayBuffer()),
+      contentType: response.headers.get("content-type") ?? contentTypeFromName(image.filename),
+    };
+  }
 
-            // Assuming the API response structure contains a URL or file identifier
-            if (response.data && response.data.image_url) {
-                Logger.info("[ComfyUIProvider] Image request successful.");
-                return response.data.image_url; // Return the public URL
-            } else {
-                throw new Error("API responded successfully but did not provide an image URL in the expected format.");
-            }
+  private async fetchJson<T>(pathName: string, init: RequestInit): Promise<T> {
+    const response = await this.fetchWithTimeout(new URL(pathName, `${this.baseUrl}/`), init);
+    if (!response.ok) throw new ImageGenerationError(`ComfyUI /${pathName} returned HTTP ${response.status}.`);
+    return (await response.json()) as T;
+  }
 
-        } catch (error) {
-            Logger.error("[ComfyUIProvider] API Call Failed", error);
-            // Re-throwing a specific application error for centralized handling by ToolExecutor
-            throw new ImageGenerationError(`Failed to communicate with ComfyUI at ${this.apiUrl}. Check your server status and logs.`);
-        }
+  private async fetchWithTimeout(url: URL, init: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (error) {
+      const reason = error instanceof Error && error.name === "AbortError" ? "request timed out" : "request failed";
+      throw new ImageGenerationError(`ComfyUI ${reason}. Check COMFYUI_URL and make sure ComfyUI is running.`, error);
+    } finally {
+      clearTimeout(timer);
     }
+  }
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function contentTypeFromName(name: string): string {
+  if (/\.jpe?g$/i.test(name)) return "image/jpeg";
+  if (/\.webp$/i.test(name)) return "image/webp";
+  return "image/png";
 }

@@ -10,7 +10,7 @@ Duccky AI processes Discord identifiers needed to function, including server ID,
 
 ## How information is used
 
-Data is used only to respond to prompts, maintain conversation context, enforce operational limits, and operate the bot. Prompt content is sent to the LM Studio endpoint configured by the operator. In the default local configuration, that endpoint runs on the same machine as the bot.
+Data is used only to respond to prompts, maintain conversation context, enforce operational limits, and operate the bot. Prompt content is sent to the LM Studio endpoint configured by the operator. In the default local configuration, that endpoint runs on the same machine as the bot. When a current-information request triggers web search, the search query is also sent to the configured SearXNG instance. When an image-generation request is made, the image prompt is sent to the configured ComfyUI instance.
 
 ## Storage and retention
 
@@ -18,7 +18,7 @@ Conversation messages and settings are stored in the deployment’s configured d
 
 ## Sharing
 
-Duccky AI does not send prompts to OpenAI or any other cloud AI provider. Information may be accessible to the operator and to infrastructure providers selected by the operator, such as a database host or server host.
+Duccky AI does not send prompts to OpenAI or any other cloud AI provider. Information may be accessible to the operator and to infrastructure providers selected by the operator, such as a database host, server host, externally hosted SearXNG instance, or externally hosted ComfyUI instance.
 
 ## Your choices
 

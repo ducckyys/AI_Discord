@@ -42,6 +42,12 @@ Conversation memory is scoped by `guildId`, `userId`, and `channelId`; messages 
 
 `AIProvider` defines the small interface required to send chat messages. `LMStudioProvider` is the only enabled implementation and uses the OpenAI-compatible endpoint at `/v1/chat/completions`. Future providers can implement the interface without changing command, event, or repository logic.
 
+For current-information requests, `ToolManager` calls the configured SearXNG instance, passes the returned snippets to LM Studio, and adds result links to the Discord reply. Ordinary chat does not require SearXNG.
+
+For image-generation requests, `ToolManager` calls `ImageService`, which uses the configured ComfyUI instance. The image path is separate from chat completion: it queues a workflow with `/prompt`, polls `/history/{prompt_id}`, downloads the first generated output from `/view`, and returns it to Discord as an attachment.
+
+The source of truth for image generation is `src/ai/image`. The `dist` directory is generated output only.
+
 ## Deployment model
 
 Development uses SQLite. For production, deploy the bot with PostgreSQL, a production-specific Prisma datasource and migration workflow, process supervision, encrypted secrets, and persistent logs. The local LM Studio server must be reachable from the bot host; never expose it publicly without authentication and network controls.

@@ -1,32 +1,21 @@
-// src/ai/image/types.ts
+import type { ToolFile } from "../tools/index.js";
 
-/**
- * Defines the core structures used across the Image Generation module.
- */
+export type ComfyWorkflow = Record<string, unknown>;
 
-export type ImageModelName = 'flux1-schnell' | 'automatic1111' | string;
-
-/**
- * Represents a standardized image generation request payload.
- */
-export interface ImageRequest {
-    prompt: string; // The full, enhanced prompt (e.g., "A cat in golden hour...")
-    negativePrompt?: string; // Things to avoid (e.g., "deformed, blurry, low quality")
-    seed?: number | null;
-    steps?: number;
-    cfgScale?: number;
-    model: ImageModelName;
+export interface ComfyOutputImage {
+  filename: string;
+  subfolder: string;
+  type: string;
 }
 
-/**
- * Represents the resulting image data or job status from a provider.
- */
-export interface GenerationResult {
-    imageUrl: string; // URL to the generated image (e.g., temporary cloud link)
-    metadata: Record<string, any>; // Additional data like seed, prompt used, etc.
+export interface ImageGenerationResult {
+  prompt: string;
+  file: ToolFile;
 }
 
-/**
- * Defines the specific workflow state for ComfyUI interactions.
- */
-export type WorkflowId = string;
+export class ImageGenerationError extends Error {
+  public constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = "ImageGenerationError";
+  }
+}

@@ -36,3 +36,19 @@ With the standard OpenAI-compatible JSON shape:
 ```
 
 The bot validates malformed responses and shows a safe Discord-facing error instead of an internal stack trace.
+
+## SearXNG integration
+
+For current-information requests, the bot calls `{SEARXNG_URL}/search` with `q`, `format=json`, `categories=general`, and `safesearch=1`. The configured SearXNG instance must enable JSON output. Search snippets and URLs are supplied to LM Studio as context; the bot does not fetch result pages.
+
+## ComfyUI integration
+
+For image-generation requests, the bot calls:
+
+```text
+POST {COMFYUI_URL}/prompt
+GET  {COMFYUI_URL}/history/{prompt_id}
+GET  {COMFYUI_URL}/view?filename=...&subfolder=...&type=output
+```
+
+The workflow JSON is loaded from `COMFYUI_WORKFLOW_PATH` when set, otherwise from `src/ai/image/workflow/flux-schnell.json`. The workflow must include a `{{PROMPT}}` placeholder. The optional `{{MODEL}}` placeholder is replaced with `IMAGE_MODEL`.

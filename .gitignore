@@ -6,3 +6,4 @@ coverage/
 *.db-journal
 logs/*.log
 !.gitkeep
+tsconfig.tsbuildinfo

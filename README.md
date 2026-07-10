@@ -15,6 +15,8 @@ Duccky AI is a self-hosted Discord assistant powered exclusively by [LM Studio](
 - Dedicated AI channel configured with `/config channel`
 - Persistent conversation context per user and channel
 - Local LM Studio OpenAI-compatible chat endpoint
+- Optional live web search through your SearXNG instance
+- Optional image generation through your ComfyUI instance
 - Slash commands for memory, status, setup, and maintenance
 - SQLite for local development, with a documented path to PostgreSQL production deployments
 - Pino logging, graceful shutdown, health endpoint, Zod validation, cooldowns, and rate limiting
@@ -25,6 +27,7 @@ Duccky AI is a self-hosted Discord assistant powered exclusively by [LM Studio](
 - pnpm 9 or newer (Corepack is included with modern Node.js)
 - A Discord application and bot token
 - LM Studio with a chat-capable model loaded
+- Optional: ComfyUI for local image generation
 
 ## Quick start
 
@@ -60,6 +63,10 @@ DATABASE_URL="file:./dev.db"
 LMSTUDIO_URL=http://127.0.0.1:1234/v1
 AI_PROVIDER=lmstudio
 MODEL=google/gemma-4-e2b
+IMAGE_PROVIDER=comfyui
+COMFYUI_URL=http://127.0.0.1:8188
+IMAGE_MODEL=flux1-schnell
+COMFYUI_WORKFLOW_PATH=
 LOG_LEVEL=info
 PORT=3000
 ```
@@ -92,12 +99,26 @@ Invoke-RestMethod http://127.0.0.1:1234/v1/models
 
 ```bash
 corepack pnpm prisma:generate
-corepack pnpm prisma db push
+corepack pnpm prisma migrate deploy
 corepack pnpm deploy:commands
 corepack pnpm dev
 ```
 
 When `bot started` appears in the terminal, open Discord and try `/ping` or mention the bot. Keep both LM Studio and this terminal running while using the bot.
+
+### 6. Enable web search with SearXNG (optional)
+
+Run a SearXNG instance, then set `SEARXNG_URL` in `.env` to its base URL. The default is `http://127.0.0.1:8080`. Its JSON response format must be enabled in SearXNG's `settings.yml`; this bot sends requests to `/search` with `format=json`.
+
+For example, ask `cari berita AI terbaru` or `latest Node.js release`. The bot supplies the returned results to LM Studio and includes the source links in its reply. Configure `SEARXNG_TIMEOUT_MS` and `SEARXNG_MAX_RESULTS` only if the defaults (10 seconds and 5 results) do not suit your instance.
+
+### 7. Enable image generation with ComfyUI (optional)
+
+Start ComfyUI and keep `COMFYUI_URL` pointed at its API server. The default is `http://127.0.0.1:8188`.
+
+The bot sends a workflow to `/prompt`, waits through `/history/{prompt_id}`, downloads the generated image from `/view`, and sends it back to Discord as an attachment.
+
+By default the bot uses `src/ai/image/workflow/flux-schnell.json`, which contains `{{PROMPT}}` and `{{MODEL}}` placeholders. If your ComfyUI setup uses a different graph, export the API workflow JSON from ComfyUI, put it in this project, and set `COMFYUI_WORKFLOW_PATH` to that file path. The workflow must include `{{PROMPT}}` where the user prompt should be injected and may include `{{MODEL}}` where `IMAGE_MODEL` should be injected.
 
 ## Commands
 
