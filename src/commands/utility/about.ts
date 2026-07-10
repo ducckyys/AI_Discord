@@ -3,7 +3,7 @@ import { SlashCommandBuilder, EmbedBuilder } from "discord.js"; import type { Co
 export const aboutCommand: Command = {
   data: new SlashCommandBuilder().setName("about").setDescription("About Duccky AI"),
   async execute(i) {
-    const creatorLink = env.CREATOR_ID ? `[Duck / duckkyy_](https://discord.com/users/${env.CREATOR_ID})` : "Duck / duckkyy_";
+    const creatorLink = env.CREATOR_ID ? `[Duck](https://discord.com/users/${env.CREATOR_ID})` : "Duck";
     const embed = new EmbedBuilder()
       .setTitle("About Duccky AI")
       .setColor(colors.info)
