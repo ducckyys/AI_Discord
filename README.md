@@ -1,5 +1,7 @@
 # Duccky AI
 
+This repository also has an Indonesian translation: [README (Bahasa Indonesia)](README.id.md)
+
 Duccky AI is a self-hosted Discord assistant that runs on local AI services.
 
 - Chat: **LM Studio**
